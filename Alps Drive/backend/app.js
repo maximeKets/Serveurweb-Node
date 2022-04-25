@@ -1,8 +1,13 @@
-const express = require('express')
-const fs = require('fs/promises')
-const path = require('path')
+
+import express from 'express';
+import fs from 'fs/promises'
+const port = 3000 ;
+import fileUpload from 'express-fileupload';
 const app = express()
-const port = 3000
+
+app.use(fileUpload());
+
+
 
 app.use(express.static('../frontend'))
 
@@ -86,6 +91,64 @@ app.delete('/api/drive/:name', async function  (req, res) {
         res.status(400).send('Format fichier non valide')
     }
 })
+
+app.delete('/api/drive/:folder/:name' ,   function(req, res){
+    let folder = req.params.folder
+    let name = req.params.name
+
+    if (!regex(name)){
+        res.status(404).send("fichier au mauvais format")
+    }
+
+return fs.rm("./Data/" + folder + '/' + name , {recursive: true})
+    .then(() => res.status(200).send('Fichier supprimé'))
+    .catch(() => res.status(404).send("le fichier n'existe pas"))
+
+})
+
+app.put ("/api/drive/", function (req, res)  {
+    let sampleFile;
+    let uploadPath;
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).send('No files were uploaded.');
+    }
+
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    sampleFile = req.files.file;
+    uploadPath ='./Data/' + sampleFile.name;
+
+    // Use the mv() method to place the file somewhere on your server
+    sampleFile.mv(uploadPath, function(err) {
+        if (err)
+            return res.status(500).send(err);
+
+         return res.send('File uploaded!');
+    });
+})
+
+app.put ("/api/drive/:name", function (req, res)  {
+    let sampleFile;
+    let folder = req.params.name;
+    let uploadPath;
+
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).send('No files were uploaded.');
+    }
+
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    sampleFile = req.files.file;
+    uploadPath ='./Data/' + folder +"/" + sampleFile.name;
+
+    // Use the mv() method to place the file somewhere on your server
+    sampleFile.mv(uploadPath, function(err) {
+        if (err)
+            return res.status(500).send(err);
+
+        return res.send('File uploaded!');
+    });
+})
+
 
 app.listen(port, () => {
     console.log(`You can now open http://localhost:${port} in your browser`)
